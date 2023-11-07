@@ -3,24 +3,21 @@ use std::{env, str::FromStr};
 use action::Action;
 
 mod action;
-mod arguments;
+mod action_handler;
 mod task;
 
 fn main() {
     let arguments: Vec<String> = env::args().collect();
-    parse_arguments(&arguments);
-    dbg!(arguments);
-}
+    if arguments.len() < 2 {
+        panic!("No arguments read");
+    }
 
-fn parse_arguments(arguments: &Vec<String>) {
-    let first_argument_index = 1;
-    let action_result = Action::from_str(arguments[first_argument_index].as_str());
-    let action = match action_result {
+    let raw_action = Action::from_str(&arguments[1].as_str());
+    let action = match raw_action {
         Ok(action) => action,
-        Err(error) => panic!("Problem parsing action: {:?}", error),
+        Err(error) => panic!("Error while determining action: {:?}", error),
     };
 
-    if Action::Add.eq(&action) {
-        print!("Action is add");
-    }
+    let action_parameters = &arguments[1..arguments.len()];
+    action_handler::handle_action(action, action_parameters);
 }

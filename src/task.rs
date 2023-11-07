@@ -1,6 +1,8 @@
+use uuid::Uuid;
+
 #[derive(Debug)]
 pub struct Task {
-    id: i32,
-    priority: i32,
-    description: String,
+    pub id: Uuid,
+    pub priority: i32,
+    pub description: String,
 }
