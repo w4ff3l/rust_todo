@@ -1,19 +1,20 @@
-use std::{fs::File, path::Path};
+use std::fs;
 use std::io::prelude::*;
+use std::{fs::File, path::Path};
 
-use uuid::Uuid;
+use crate::{action::Action, task::Task, Config};
 
-use crate::{action::Action, task::Task};
+const TASK_FILE: &str = "todo.txt";
 
-pub fn handle_action(action: Action, action_parameters: &[String]) {
-    match action {
-        Action::Add => hadle_add(action_parameters),
+pub fn handle_action(config: Config) {
+    match config.action {
+        Action::Add => handle_add(config.action_parameters),
         Action::Remove => todo!(),
         Action::Complete => todo!(),
     }
 }
 
-fn hadle_add(action_parameters: &[String]) {
+fn handle_add(action_parameters: Vec<String>) {
     if action_parameters.len() != 3 {
         panic!("Incorrect number of arguments. Provide precicesly one description and one priority to add a task.");
     }
@@ -26,7 +27,7 @@ fn hadle_add(action_parameters: &[String]) {
     };
 
     let task = Task {
-        id: Uuid::new_v4(),
+        id: 1,
         priority,
         description: action_parameters[2].clone(),
     };
@@ -35,9 +36,10 @@ fn hadle_add(action_parameters: &[String]) {
         Ok(_) => println!("Task successfully written to file."),
         Err(error) => panic!("Unable to write to file: {:?}", error),
     };
+
 }
 
-fn write_task_to_file(task: Task) -> std::io::Result<()>{
+fn write_task_to_file(task: Task) -> std::io::Result<()> {
     let path = Path::new("todos.txt");
 
     let mut file = File::create(path)?;
@@ -50,23 +52,36 @@ fn write_task_to_file(task: Task) -> std::io::Result<()>{
     Ok(())
 }
 
-#[test]
-#[should_panic]
-fn panic_too_much_arguments() {
-    let action_parameters = vec![
-        String::from("add"),
-        String::from("1"),
-        String::from("Description"),
-        String::from("Invalid"),
-    ];
+#[cfg(test)]
+mod tests {
+    use crate::config::Config;
 
-    handle_action(Action::Add, &action_parameters);
-}
+    use super::*;
 
-#[test]
-#[should_panic]
-fn panic_not_enough_arguments() {
-    let action_parameters = vec![String::from("add"), String::from("1")];
+    #[test]
+    #[should_panic]
+    fn panic_too_much_arguments() {
+        let action_parameters = vec![
+            String::from("add"),
+            String::from("1"),
+            String::from("Description"),
+            String::from("Invalid"),
+        ];
 
-    handle_action(Action::Add, &action_parameters)
+        handle_action(Config {
+            action: Action::Add,
+            action_parameters,
+        });
+    }
+
+    #[test]
+    #[should_panic]
+    fn panic_not_enough_arguments() {
+        let action_parameters = vec![String::from("add"), String::from("1")];
+
+        handle_action(Config {
+            action: Action::Add,
+            action_parameters,
+        })
+    }
 }

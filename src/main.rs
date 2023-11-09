@@ -1,23 +1,29 @@
-use std::{env, str::FromStr};
+use std::{env, error::Error, process};
 
-use action::Action;
+use config::Config;
 
-mod action;
 mod action_handler;
+mod parser;
+mod parse_file_error;
+mod action;
+mod config;
 mod task;
 
 fn main() {
     let arguments: Vec<String> = env::args().collect();
-    if arguments.len() < 2 {
-        panic!("No arguments read");
+
+    let config = Config::build(&arguments).unwrap_or_else(|err| {
+        println!("Problem parsing arguments: {err}");
+        process::exit(1);
+    });
+
+    if let Err(e) = run(config) {
+        println!("Application error: {e}");
+        process::exit(1);
     }
+}
 
-    let raw_action = Action::from_str(&arguments[1].as_str());
-    let action = match raw_action {
-        Ok(action) => action,
-        Err(error) => panic!("Error while determining action: {:?}", error),
-    };
-
-    let action_parameters = &arguments[1..arguments.len()];
-    action_handler::handle_action(action, action_parameters);
+fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    action_handler::handle_action(config);
+    Ok(())
 }

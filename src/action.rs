@@ -8,7 +8,7 @@ pub enum Action {
 }
 
 impl FromStr for Action {
-    type Err = ();
+    type Err = &'static str;
 
     fn from_str(str: &str) -> Result<Action, Self::Err> {
         match str {
@@ -18,7 +18,7 @@ impl FromStr for Action {
             "r"         => Ok(Action::Remove),
             "complete"  => Ok(Action::Complete),
             "c"         => Ok(Action::Complete),
-            _           => Err(()),
+            _           => Err("Unknown action."),
         }
     }
 }

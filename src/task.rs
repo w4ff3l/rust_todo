@@ -1,8 +1,8 @@
-use uuid::Uuid;
+use std::u32;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Task {
-    pub id: Uuid,
+    pub id: u32,
     pub priority: i32,
     pub description: String,
 }
