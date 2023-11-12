@@ -115,4 +115,14 @@ mod tests {
         assert_eq!(expected_task.priority, actual_task.priority);
         assert_str_eq!(expected_task.description, actual_task.description);
     }
+
+    impl Task {
+        pub fn to_vector(&self) -> Vec<String> {
+            vec![
+                self.id.to_string(),
+                self.priority.to_string(),
+                self.description.clone(),
+            ]
+        }
+    }
 }

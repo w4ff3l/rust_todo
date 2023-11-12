@@ -25,6 +25,6 @@ fn main() {
 }
 
 fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let _ = action_handler::handle_action(config)?;
+    action_handler::handle_action(config)?;
     Ok(())
 }

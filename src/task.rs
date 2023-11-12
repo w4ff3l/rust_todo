@@ -17,12 +17,4 @@ impl Task {
         };
         Ok(task)
     }
-
-    pub fn to_vector(&self) -> Vec<String> {
-        vec![
-            self.id.to_string(),
-            self.priority.to_string(),
-            self.description.clone(),
-        ]
-    }
 }
