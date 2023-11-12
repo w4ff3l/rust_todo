@@ -2,17 +2,18 @@ use std::{env, error::Error, process};
 
 use config::Config;
 
-mod action_handler;
-mod parser;
-mod parse_file_error;
 mod action;
+mod action_handler;
 mod config;
+mod parser;
 mod task;
 
 fn main() {
     let arguments: Vec<String> = env::args().collect();
 
-    let config = Config::build(&arguments).unwrap_or_else(|err| {
+    let file_directory_buff = env::current_dir().unwrap().to_str().unwrap().to_string();
+
+    let config = Config::build(file_directory_buff, &arguments).unwrap_or_else(|err| {
         println!("Problem parsing arguments: {err}");
         process::exit(1);
     });
@@ -24,6 +25,6 @@ fn main() {
 }
 
 fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    action_handler::handle_action(config);
+    let _ = action_handler::handle_action(config)?;
     Ok(())
 }
