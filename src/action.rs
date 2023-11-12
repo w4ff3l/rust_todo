@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Action {
+    List,
     Add,
     Remove,
     Complete,
@@ -18,6 +19,8 @@ impl FromStr for Action {
             "r"         => Ok(Action::Remove),
             "complete"  => Ok(Action::Complete),
             "c"         => Ok(Action::Complete),
+            "list"      => Ok(Action::List),
+            "l"         => Ok(Action::List),
             _           => Err("Unknown action."),
         }
     }

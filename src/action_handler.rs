@@ -2,17 +2,38 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 use std::{fs::File, path::Path};
 
-use crate::parser;
+use ascii_table::{AsciiTable, Align};
+
+use crate::parser::{self, parse_task_file};
 use crate::{action::Action, task::Task, Config};
 
 const TASK_FILE: &str = "todo.txt";
 
 pub fn handle_action(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     match config.action {
+        Action::List => handle_list(config.file_directory),
         Action::Add => handle_add(config.file_directory, config.action_parameters),
         Action::Remove => todo!(),
         Action::Complete => todo!(),
     }
+}
+
+fn handle_list(file_directory: String) -> Result<(), Box<dyn std::error::Error>> {
+    let path_string = file_directory.clone() + TASK_FILE;
+    let path = Path::new(&path_string);
+
+    let tasks = parse_task_file(path)?;
+
+    let mut ascii_table = AsciiTable::default();
+    ascii_table.set_max_width(50);
+    ascii_table.column(0).set_header("Id").set_align(Align::Center);
+    ascii_table.column(1).set_header("Priority").set_align(Align::Center);
+    ascii_table.column(2).set_header("Description").set_align(Align::Left);
+
+    let table_data = tasks.into_iter().map(|task| task.to_string_vector()).collect::<Vec<Vec<String>>>();
+    ascii_table.print(table_data);
+
+    Ok(())
 }
 
 fn handle_add(
@@ -86,8 +107,8 @@ mod tests {
             description: "Second".to_string(),
         };
 
-        let action_parameters_task_one = task_one.to_vector();
-        let action_parameters_task_two = task_two.to_vector();
+        let action_parameters_task_one = task_one.to_string_vector();
+        let action_parameters_task_two = task_two.to_string_vector();
 
         handle_action(Config {
             action: Action::Add,
@@ -114,15 +135,5 @@ mod tests {
         assert_eq!(expected_task.id, actual_task.id);
         assert_eq!(expected_task.priority, actual_task.priority);
         assert_str_eq!(expected_task.description, actual_task.description);
-    }
-
-    impl Task {
-        pub fn to_vector(&self) -> Vec<String> {
-            vec![
-                self.id.to_string(),
-                self.priority.to_string(),
-                self.description.clone(),
-            ]
-        }
     }
 }
