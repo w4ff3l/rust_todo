@@ -40,12 +40,10 @@ pub fn parse_task_file(path: &Path) -> Result<Vec<Task>, ParseFileError> {
 fn parse_task(line: &str) -> Result<Task, ParseFileError> {
     let tokens: Vec<&str> = line.split_whitespace().collect::<Vec<&str>>();
 
-    let id = tokens[0].to_string().parse::<u32>()?;
-    let priority = tokens[1].to_string().parse::<i32>()?;
-    let description = tokens[2..tokens.len()].join(" ");
+    let priority = tokens[0].to_string().parse::<i32>()?;
+    let description = tokens[1..tokens.len()].join(" ");
 
     Ok(Task {
-        id,
         priority,
         description,
     })
@@ -71,41 +69,35 @@ mod tests {
         let tempfile = NamedTempFile::new().unwrap();
         let path = tempfile.path();
         let task1 = Task {
-            id: 1,
             priority: 1,
             description: "First Task".to_string(),
         };
         let task2 = Task {
-            id: 2,
             priority: 1,
             description: "Second Task".to_string(),
         };
         let task3 = Task {
-            id: 3,
             priority: 2,
             description: "Third Task".to_string(),
         };
 
         writeln!(
             tempfile.as_file(),
-            "{} {} {}",
-            task1.id.to_string(),
+            "{} {}",
             task1.priority.to_string(),
             task1.description
         )
         .unwrap();
         writeln!(
             tempfile.as_file(),
-            "{} {} {}",
-            task2.id.to_string(),
+            "{} {}",
             task2.priority.to_string(),
             task2.description
         )
         .unwrap();
         writeln!(
             tempfile.as_file(),
-            "{} {} {}",
-            task3.id.to_string(),
+            "{} {}",
             task3.priority.to_string(),
             task3.description
         )
