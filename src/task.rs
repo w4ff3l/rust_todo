@@ -8,8 +8,8 @@ pub struct Task {
 
 impl Task {
     pub fn build(components: Vec<String>) -> Result<Task, ParseIntError> {
-        let priority = components[1].parse::<i32>()?;
-        let description = components[2..components.len()].join(" ");
+        let priority = components[0].parse::<i32>()?;
+        let description = components[1..components.len()].join(" ");
         let task = Task {
             priority,
             description,

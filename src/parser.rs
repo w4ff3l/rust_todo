@@ -1,4 +1,4 @@
-use std::{fs, io, num::ParseIntError, path::Path};
+use std::{fs, io, num::ParseIntError, path::PathBuf};
 
 use thiserror::Error;
 
@@ -24,7 +24,7 @@ impl From<ParseIntError> for ParseFileError {
     }
 }
 
-pub fn parse_task_file(path: &Path) -> Result<Vec<Task>, ParseFileError> {
+pub fn parse_task_file(path: PathBuf) -> Result<Vec<Task>, ParseFileError> {
     let content = fs::read_to_string(path)?;
 
     let mut tasks = Vec::new();
@@ -53,7 +53,7 @@ fn parse_task(line: &str) -> Result<Task, ParseFileError> {
 mod tests {
     use std::{
         io::{Seek, SeekFrom, Write},
-        path::Path,
+        path::PathBuf,
     };
 
     use pretty_assertions::assert_eq;
@@ -67,7 +67,8 @@ mod tests {
     #[test]
     fn parses_task_file_correctly() {
         let tempfile = NamedTempFile::new().unwrap();
-        let path = tempfile.path();
+        let path = tempfile.path().to_owned();
+
         let task1 = Task {
             priority: 1,
             description: "First Task".to_string(),
@@ -115,7 +116,7 @@ mod tests {
 
     #[test]
     fn returns_correct_error_if_file_parsing_fails() {
-        let tasks_error = parse_task_file(Path::new("Unknown path"));
+        let tasks_error = parse_task_file(PathBuf::from("Unknown path"));
 
         assert!(tasks_error.is_err());
     }
@@ -123,7 +124,7 @@ mod tests {
     #[test]
     fn returns_correct_error_if_line_parsing_fails() {
         let tempfile = NamedTempFile::new().unwrap();
-        let path = tempfile.path();
+        let path = tempfile.path().to_owned();
         writeln!(tempfile.as_file(), "{} {} {}", "a", "b", "description",).unwrap();
 
         let tasks_error = parse_task_file(path);

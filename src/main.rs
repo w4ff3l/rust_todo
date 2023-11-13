@@ -11,7 +11,7 @@ mod task;
 fn main() {
     let arguments: Vec<String> = env::args().collect();
 
-    let file_directory_buff = env::current_dir().unwrap().to_str().unwrap().to_string();
+    let file_directory_buff = env::current_dir().unwrap();
 
     let config = Config::build(file_directory_buff, &arguments).unwrap_or_else(|err| {
         eprintln!("Problem parsing arguments: {err}");

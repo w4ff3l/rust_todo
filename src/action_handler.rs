@@ -1,6 +1,6 @@
 use std::fs::File;
-use std::io::prelude::*;
-use std::path::PathBuf;
+use std::io::{prelude::*, BufWriter};
+use std::path::{Path, PathBuf};
 
 use ascii_table::{Align, AsciiTable};
 
@@ -26,10 +26,10 @@ pub fn handle_action(config: Config) -> Result<(), Box<dyn std::error::Error>> {
 /// # Arguments
 ///
 /// * `file_directory` - Directory the tasks file is created in.
-fn handle_list(file_directory: String) -> Result<(), Box<dyn std::error::Error>> {
-    let path = create_file_path(file_directory);
+fn handle_list(mut file_directory: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    file_directory.push(Path::new(TASK_FILE));
 
-    let mut tasks = parse_task_file(&path)?;
+    let mut tasks = parse_task_file(file_directory)?;
     tasks.sort();
 
     let mut ascii_table = AsciiTable::default();
@@ -74,23 +74,22 @@ fn handle_list(file_directory: String) -> Result<(), Box<dyn std::error::Error>>
 /// * `file_directory` - Directory the tasks file is created in.
 /// * `action_parameters` - Parameters representing the task.
 fn handle_add(
-    file_directory: String,
+    mut file_directory: PathBuf,
     action_parameters: Vec<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let path = create_file_path(file_directory);
+    file_directory.push(Path::new(TASK_FILE));
 
-    let mut tasks = if path.exists() {
-        parser::parse_task_file(&path)?
+    let mut tasks = if file_directory.exists() {
+        parser::parse_task_file(file_directory.clone())?
     } else {
         Vec::new()
     };
-    
-    
+
     let task_to_add = Task::build(action_parameters)?;
 
     tasks.push(task_to_add);
     tasks.sort();
-    write_tasks(path.to_path_buf(), tasks)?;
+    write_tasks(file_directory, tasks)?;
 
     Ok(())
 }
@@ -118,23 +117,18 @@ fn write_tasks(path: PathBuf, tasks: Vec<Task>) -> std::io::Result<()> {
 /// * `task` - The task to be written to the file.
 /// * `file` - The file bo be written to.
 fn write_task(task: Task, file: &mut File) -> std::io::Result<()> {
-    file.write_all(task.priority.to_string().as_bytes())?;
-    file.write_all(b" ")?;
-    file.write_all(task.description.as_bytes())?;
-    file.write_all(b"\n")?;
+    let mut buf_writer = BufWriter::new(file);
+
+    write!(buf_writer, "{} ", task.priority)?;
+    writeln!(buf_writer, "{}", task.description)?;
 
     Ok(())
-}
-
-fn create_file_path(file_directory: String) -> PathBuf {
-    let path_string = file_directory.clone() + "/" + TASK_FILE;
-    PathBuf::from(&path_string)
 }
 
 #[cfg(test)]
 mod tests {
     use pretty_assertions::{assert_eq, assert_str_eq};
-    use tempfile::TempDir;
+    use tempfile::tempdir;
 
     use crate::parser;
 
@@ -142,8 +136,8 @@ mod tests {
 
     #[test]
     fn tasks_get_written_to_file() {
-        let tempdir = TempDir::new().unwrap().path().to_str().unwrap().to_string();
-        let path = create_file_path(tempdir.clone());
+        let tempdir = tempdir().unwrap().into_path();
+        let tasks_file = tempdir.join(TASK_FILE);
 
         let task_one = Task {
             priority: 1,
@@ -171,8 +165,7 @@ mod tests {
         })
         .unwrap();
 
-        let tasks = parser::parse_task_file(&path).unwrap();
-        drop(tempdir);
+        let tasks = parser::parse_task_file(tasks_file).unwrap();
 
         assert!(tasks.len() == 2);
         assert_task(&task_one, &tasks[0]);
