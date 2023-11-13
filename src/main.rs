@@ -14,12 +14,12 @@ fn main() {
     let file_directory_buff = env::current_dir().unwrap().to_str().unwrap().to_string();
 
     let config = Config::build(file_directory_buff, &arguments).unwrap_or_else(|err| {
-        println!("Problem parsing arguments: {err}");
+        eprintln!("Problem parsing arguments: {err}");
         process::exit(1);
     });
 
     if let Err(e) = run(config) {
-        println!("Application error: {e}");
+        eprintln!("Application error: {e}");
         process::exit(1);
     }
 }
