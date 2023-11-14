@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use ascii_table::{Align, AsciiTable};
 
-use crate::parser::{self, parse_task_file};
+use crate::parser;
 use crate::{action::Action, task::Task, Config};
 
 const TASK_FILE: &str = "todo.txt";
@@ -29,33 +29,11 @@ pub fn handle_action(config: Config) -> Result<(), Box<dyn std::error::Error>> {
 fn handle_list(mut file_directory: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     file_directory.push(Path::new(TASK_FILE));
 
-    let mut tasks = parse_task_file(file_directory)?;
+    let mut tasks = parser::parse_task_file(file_directory)?;
     tasks.sort();
 
-    let mut ascii_table = AsciiTable::default();
-    ascii_table.set_max_width(50);
-    ascii_table
-        .column(0)
-        .set_header("Id")
-        .set_align(Align::Center);
-    ascii_table
-        .column(1)
-        .set_header("Priority")
-        .set_align(Align::Center);
-    ascii_table
-        .column(2)
-        .set_header("Description")
-        .set_align(Align::Left);
-
-    let table_data = tasks
-        .into_iter()
-        .enumerate()
-        .map(|(index, task)| {
-            let mut task_vec = vec![index.to_string()];
-            task_vec.append(&mut task.to_string_vector());
-            task_vec
-        })
-        .collect::<Vec<Vec<String>>>();
+    let ascii_table = create_ascii_table();
+    let table_data = create_table_data(tasks);
     ascii_table.print(table_data);
 
     Ok(())
@@ -125,6 +103,36 @@ fn write_task(task: Task, file: &mut File) -> std::io::Result<()> {
     Ok(())
 }
 
+fn create_table_data(tasks: Vec<Task>) -> Vec<Vec<String>> {
+    tasks
+        .into_iter()
+        .enumerate()
+        .map(|(index, task)| {
+            let mut task_vec = vec![index.to_string()];
+            task_vec.append(&mut task.to_string_vector());
+            task_vec
+        })
+        .collect::<Vec<Vec<String>>>()
+}
+
+fn create_ascii_table() -> AsciiTable {
+    let mut ascii_table = AsciiTable::default();
+    ascii_table.set_max_width(50);
+    ascii_table
+        .column(0)
+        .set_header("Id")
+        .set_align(Align::Center);
+    ascii_table
+        .column(1)
+        .set_header("Priority")
+        .set_align(Align::Center);
+    ascii_table
+        .column(2)
+        .set_header("Description")
+        .set_align(Align::Left);
+    ascii_table
+}
+
 #[cfg(test)]
 mod tests {
     use pretty_assertions::{assert_eq, assert_str_eq};
@@ -143,7 +151,6 @@ mod tests {
             priority: 1,
             description: "First".to_string(),
         };
-
         let task_two = Task {
             priority: 2,
             description: "Second".to_string(),
@@ -170,6 +177,33 @@ mod tests {
         assert!(tasks.len() == 2);
         assert_task(&task_one, &tasks[0]);
         assert_task(&task_two, &tasks[1]);
+    }
+    
+    #[test]
+    fn creates_table_data() {
+        let task_one = Task {
+            priority: 1,
+            description: "First".to_string(),
+        };
+        let task_two = Task {
+            priority: 2,
+            description: "Second".to_string(),
+        };
+        let tasks = vec![task_one.clone(), task_two.clone()];
+
+        let table_data = create_table_data(tasks.clone());
+
+        assert_eq!(2, table_data.len());
+        assert_eq!(tasks.len(), table_data.len());
+        assert_row(&table_data[0], task_one, 0);
+        assert_row(&table_data[1], task_two, 1);
+    }
+
+    fn assert_row(table_row: &Vec<String>, task: Task, index: i32) {
+        assert_eq!(3, table_row.len());
+        assert_eq!(index.to_string(), table_row[0]);
+        assert_eq!(task.priority.to_string(), table_row[1]);
+        assert_eq!(task.description, table_row[2]);
     }
 
     fn assert_task(expected_task: &Task, actual_task: &Task) {
