@@ -24,7 +24,7 @@ impl From<ParseIntError> for ParseFileError {
     }
 }
 
-pub fn parse_task_file(path: PathBuf) -> Result<Vec<Task>, ParseFileError> {
+pub fn parse_task_file(path: &PathBuf) -> Result<Vec<Task>, ParseFileError> {
     let content = fs::read_to_string(path)?;
 
     let mut tasks = Vec::new();
@@ -105,7 +105,7 @@ mod tests {
         .unwrap();
         tempfile.as_file().seek(SeekFrom::Start(0)).unwrap();
 
-        let tasks = parse_task_file(path).unwrap();
+        let tasks = parse_task_file(&path).unwrap();
         drop(tempfile);
 
         assert!(tasks.len() == 3);
@@ -116,7 +116,7 @@ mod tests {
 
     #[test]
     fn returns_correct_error_if_file_parsing_fails() {
-        let tasks_error = parse_task_file(PathBuf::from("Unknown path"));
+        let tasks_error = parse_task_file(&PathBuf::from("Unknown path"));
 
         assert!(tasks_error.is_err());
     }
@@ -127,7 +127,7 @@ mod tests {
         let path = tempfile.path().to_owned();
         writeln!(tempfile.as_file(), "{} {} {}", "a", "b", "description",).unwrap();
 
-        let tasks_error = parse_task_file(path);
+        let tasks_error = parse_task_file(&path);
 
         if let Err(ParseFileError::InvalidLine(_)) = tasks_error {
             assert!(true);

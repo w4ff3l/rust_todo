@@ -13,7 +13,7 @@ pub fn handle_action(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     match config.action {
         Action::List => handle_list(config.file_directory),
         Action::Add => handle_add(config.file_directory, config.action_parameters),
-        Action::Remove => todo!(),
+        Action::Remove => handle_remove(config.file_directory, config.action_parameters),
         Action::Complete => todo!(),
     }
 }
@@ -29,7 +29,7 @@ pub fn handle_action(config: Config) -> Result<(), Box<dyn std::error::Error>> {
 fn handle_list(mut file_directory: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     file_directory.push(Path::new(TASK_FILE));
 
-    let mut tasks = parser::parse_task_file(file_directory)?;
+    let mut tasks = parser::parse_task_file(&file_directory)?;
     tasks.sort();
 
     let ascii_table = create_ascii_table();
@@ -58,7 +58,7 @@ fn handle_add(
     file_directory.push(Path::new(TASK_FILE));
 
     let mut tasks = if file_directory.exists() {
-        parser::parse_task_file(file_directory.clone())?
+        parser::parse_task_file(&file_directory)?
     } else {
         Vec::new()
     };
@@ -67,7 +67,34 @@ fn handle_add(
 
     tasks.push(task_to_add);
     tasks.sort();
-    write_tasks(file_directory, tasks)?;
+    write_tasks(&tasks, file_directory)?;
+
+    Ok(())
+}
+
+/// Handles the remove action.
+///
+/// Deletes a single entry in the file identified by its id.
+///
+/// # Arguments
+///
+/// * `file_directory` - Directory the tasks file is created in.
+/// * `action_parameters` - Parameter representing the id.
+fn handle_remove(
+    mut file_directory: PathBuf,
+    action_parameters: Vec<String>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if action_parameters.len() > 2 {
+        return Err("Too much arguments".into());
+    }
+
+    file_directory.push(Path::new(TASK_FILE));
+    let mut tasks = parser::parse_task_file(&file_directory)?;
+    tasks.sort();
+
+    tasks.remove(action_parameters[1].parse::<usize>()?);
+
+    write_tasks(&tasks, file_directory)?;
 
     Ok(())
 }
@@ -78,7 +105,7 @@ fn handle_add(
 ///
 /// * `path` - The path to the file to be written to. The file will be created if it is not present.
 /// * `tasks` - The tasks to be written to the file.
-fn write_tasks(path: PathBuf, tasks: Vec<Task>) -> std::io::Result<()> {
+fn write_tasks(tasks: &Vec<Task>, path: PathBuf) -> std::io::Result<()> {
     let mut file = File::create(path)?;
 
     for task in tasks {
@@ -94,7 +121,7 @@ fn write_tasks(path: PathBuf, tasks: Vec<Task>) -> std::io::Result<()> {
 ///
 /// * `task` - The task to be written to the file.
 /// * `file` - The file bo be written to.
-fn write_task(task: Task, file: &mut File) -> std::io::Result<()> {
+fn write_task(task: &Task, file: &mut File) -> std::io::Result<()> {
     let mut buf_writer = BufWriter::new(file);
 
     write!(buf_writer, "{} ", task.priority)?;
@@ -172,13 +199,13 @@ mod tests {
         })
         .unwrap();
 
-        let tasks = parser::parse_task_file(tasks_file).unwrap();
+        let tasks = parser::parse_task_file(&tasks_file).unwrap();
 
         assert!(tasks.len() == 2);
         assert_task(&task_one, &tasks[0]);
         assert_task(&task_two, &tasks[1]);
     }
-    
+
     #[test]
     fn creates_table_data() {
         let task_one = Task {
